@@ -1,6 +1,6 @@
 use crate::cli::flags::Cmd;
 use crate::entities::dir::DirTree;
-use crate::output::{colors::ColorParser, ledger::Ledger, pattern::PatternParser};
+use crate::output::{colors::ColorParser, pattern::PatternParser};
 
 pub mod cli;
 pub mod entities;
