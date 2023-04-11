@@ -1,0 +1,15 @@
+```
+$ tree tests/mock_dir -P '[Aac]'
+"mock_dir"
+├─── A
+│    ├─── A_NESTED
+│    ├─── a.rs
+│    └─── c.rs
+└─── A.rs
+
+
+Total directories: 2 Total files: 3
+
+
+```
+

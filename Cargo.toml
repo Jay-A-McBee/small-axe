@@ -1,0 +1,14 @@
+[package]
+name = "tree"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "tree"
+path = "src/main.rs"
+
+[dev-dependencies]
+trycmd = "0.14.13"
+
+[dependencies]
+once_cell = "1.17.1"

@@ -1,0 +1,26 @@
+```
+$ tree -a tests/mock_dir
+"mock_dir"
+├─── A
+│    ├─── A_NESTED
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── A.rs
+├─── B
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── C
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── .hidden
+│    └─── .hidden_file.rs
+└─── sym_linked -> "tests/mock_dir/A/"
+
+
+Total directories: 5 Total files: 11
+
+
+```

@@ -1,0 +1,22 @@
+```
+$ tree tests/mock_dir --noreport
+"mock_dir"
+├─── A
+│    ├─── A_NESTED
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── A.rs
+├─── B
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── C
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+└─── sym_linked -> "tests/mock_dir/A/"
+
+
+```
+

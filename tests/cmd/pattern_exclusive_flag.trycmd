@@ -1,0 +1,13 @@
+```
+$ tree tests/mock_dir -I '[acAC]'
+"mock_dir"
+├─── B
+│    └─── b.rs
+└─── sym_linked -> "tests/mock_dir/A/"
+
+
+Total directories: 1 Total files: 1
+
+
+```
+

@@ -1,0 +1,24 @@
+```
+$ tree -alsp --noreport tests/mock_dir
+"mock_dir"
+├───[drwxr-xr-x 256 B] A
+│    ├───[drwxr-xr-x 64 B] A_NESTED
+│    ├───[-rw-r--r-- 0 B] a.rs
+│    ├───[-rw-r--r-- 0 B] b.rs
+│    └───[-rw-r--r-- 0 B] c.rs
+├───[-rw-r--r-- 0 B] A.rs
+├───[drwxr-xr-x 160 B] B
+│    ├───[-rw-r--r-- 0 B] a.rs
+│    ├───[-rw-r--r-- 0 B] b.rs
+│    └───[-rw-r--r-- 0 B] c.rs
+├───[drwxr-xr-x 160 B] C
+│    ├───[-rw-r--r-- 0 B] a.rs
+│    ├───[-rw-r--r-- 0 B] b.rs
+│    └───[-rw-r--r-- 0 B] c.rs
+├───[drwxr-xr-x 96 B] .hidden
+│    └───[-rw-r--r-- 0 B] .hidden_file.rs
+└───[lrwxr-xr-x 256 B] sym_linked [Recursion detected] -> "[CWD]/tests/mock_dir/A"
+
+
+```
+

@@ -1,0 +1,24 @@
+```
+$ tree -l tests/mock_dir
+"mock_dir"
+├─── A
+│    ├─── A_NESTED
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── A.rs
+├─── B
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+├─── C
+│    ├─── a.rs
+│    ├─── b.rs
+│    └─── c.rs
+└─── sym_linked [Recursion detected] -> "[CWD]/tests/mock_dir/A"
+
+
+Total directories: 6 Total files: 13
+
+
+```
