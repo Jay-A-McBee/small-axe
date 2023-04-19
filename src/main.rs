@@ -1,8 +1,9 @@
 use crate::cli::flags::Cmd;
-use crate::entities::dir::DirTree;
+use crate::entities::Tree;
 use crate::output::{colors::ColorParser, pattern::PatternParser};
 
 pub mod cli;
+pub mod core;
 pub mod entities;
 pub mod output;
 
@@ -51,42 +52,49 @@ fn main() -> std::io::Result<()> {
     } else if !flags.dir_path.as_ref().unwrap().is_dir() {
         println!("Path is not a directory - {:?}", flags.dir_path)
     } else {
-        let with_meta = Cmd::requires_metadata();
-
-        ColorParser::from_ls_colors(flags.colors);
-
-        let pattern_parser = match (&flags.pattern_match, &flags.pattern_exclude) {
-            (Some(match_pattern), None) => {
-                Some(PatternParser::parse_pattern(match_pattern.as_str(), true))
-            }
-
-            (None, Some(exclude_pattern)) => Some(PatternParser::parse_pattern(
-                exclude_pattern.as_str(),
-                false,
-            )),
-
-            _ => None,
+        let mut tree = Tree {
+            root: flags.dir_path.as_ref().unwrap().to_path_buf(),
         };
 
-        if let Some(tree) = DirTree::new(
-            flags.dir_path.as_ref().unwrap(),
-            0,
-            with_meta,
-            &pattern_parser,
-        ) {
-            println!("{}", tree);
-
-            if !flags.no_report {
-                let (total_dir_count, total_file_count) = tree.get_total_contents_count();
-                let report = format!(
-                    "\nTotal directories: {total_dir_count} Total files: {total_file_count}\n"
-                );
-
-                println!("{}", report)
-            }
-        } else {
-            println!("Uh-oh something went wrong creating the directory structure")
+        for entry in tree {
+            println!("----->{:?}", entry.unwrap().path)
         }
+        // let with_meta = Cmd::requires_metadata();
+
+        // ColorParser::from_ls_colors(flags.colors);
+
+        // let pattern_parser = match (&flags.pattern_match, &flags.pattern_exclude) {
+        //     (Some(match_pattern), None) => {
+        //         Some(PatternParser::parse_pattern(match_pattern.as_str(), true))
+        //     }
+
+        //     (None, Some(exclude_pattern)) => Some(PatternParser::parse_pattern(
+        //         exclude_pattern.as_str(),
+        //         false,
+        //     )),
+
+        //     _ => None,
+        // };
+
+        // if let Some(tree) = DirTree::new(
+        //     flags.dir_path.as_ref().unwrap(),
+        //     0,
+        //     with_meta,
+        //     &pattern_parser,
+        // ) {
+        //     println!("{}", tree);
+
+        //     if !flags.no_report {
+        //         let (total_dir_count, total_file_count) = tree.get_total_contents_count();
+        //         let report = format!(
+        //             "\nTotal directories: {total_dir_count} Total files: {total_file_count}\n"
+        //         );
+
+        //         println!("{}", report)
+        //     }
+        // } else {
+        //     println!("Uh-oh something went wrong creating the directory structure")
+        // }
     }
 
     Ok(())

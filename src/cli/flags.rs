@@ -131,7 +131,7 @@ impl Cmd {
                         d.trim()
                             .parse::<usize>()
                             .expect("error parsing file limit value")
-                    })
+                    });
                 }
                 "-D" => flags.last_modified = true,
                 "-a" => flags.all = true,
@@ -161,10 +161,11 @@ impl Cmd {
                         d.trim()
                             .parse::<usize>()
                             .expect("error parsing max depth value")
-                    })
+                    });
                 }
                 "-o" => {
-                    flags.output_file = cmd_flags.next().map(|f| PathBuf::from(f.trim().to_owned()))
+                    flags.output_file =
+                        cmd_flags.next().map(|f| PathBuf::from(f.trim().to_owned()));
                 }
                 _ => {
                     if flag.starts_with('-') {
@@ -182,7 +183,7 @@ impl Cmd {
 
         USER_FLAGS
             .set(flags)
-            .expect("Failed to set global user flags")
+            .expect("Failed to set global user flags");
     }
 
     pub fn requires_metadata() -> bool {

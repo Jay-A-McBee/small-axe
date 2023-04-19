@@ -54,7 +54,7 @@ impl ColorParser {
             ('F', (String::from("95"), String::from("105"))), // bright magenta
             ('G', (String::from("96"), String::from("106"))), // bright cyan
             ('H', (String::from("97"), String::from("107"))), // bright white
-            ('x', (String::from(""), String::from(""))),
+            ('x', (String::new(), String::new())),
         ]);
 
         color_var
@@ -133,8 +133,8 @@ impl ColorParser {
                                                 .get(resource)
                                                 .expect("Failed to get resource colors"),
                                             (
-                                                resource_colors.first().unwrap().to_string(),
-                                                "".to_string(),
+                                                (*resource_colors.first().unwrap()).to_string(),
+                                                String::new(),
                                             ),
                                         ))
                                     } else {
@@ -143,14 +143,14 @@ impl ColorParser {
                                                 .get(resource)
                                                 .expect("Failed to get resource color"),
                                             (
-                                                resource_colors
+                                                (*resource_colors
                                                     .first()
-                                                    .expect("Failed to get first colors")
-                                                    .to_string(),
-                                                resource_colors
+                                                    .expect("Failed to get first colors"))
+                                                .to_string(),
+                                                (*resource_colors
                                                     .get(1)
-                                                    .expect("Failed to get last colors")
-                                                    .to_string(),
+                                                    .expect("Failed to get last colors"))
+                                                .to_string(),
                                             ),
                                         ))
                                     }
