@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::path::{Path, PathBuf};
 use std::vec;
 
@@ -37,19 +38,19 @@ pub struct UserFlags {
 }
 
 pub struct Tree {
-    pub root: PathBuf,
+    pub root: Option<PathBuf>,
     pub opts: UserFlags,
 }
 
 impl Tree {
-    pub fn new(root: PathBuf) -> Self {
+    pub fn new() -> Self {
         Tree {
-            root,
+            root: None,
             opts: UserFlags::default(),
         }
     }
 
-    pub fn with_opts(&mut self, env_args: Vec<String>) {
+    pub fn with_opts(mut self, env_args: Vec<String>) -> Self {
         let mut args_iter = Tree::process_opts(env_args).into_iter();
 
         while let Some(opt) = args_iter.next() {
@@ -127,11 +128,18 @@ impl Tree {
                     if opt.starts_with('-') {
                         println!("\nunrecognized flag - {opt}.\n");
                     } else {
-                        self.root = PathBuf::from(opt);
+                        self.root = Some(PathBuf::from(opt));
                     }
                 }
             }
         }
+
+        if self.root.is_none() {
+            self.root = std::env::current_dir()
+                .map_or_else(|_| Some(PathBuf::from(".")), |cwd| Some(cwd))
+        }
+
+        self
     }
 
     fn process_opts(env_args: Vec<String>) -> Vec<String> {
@@ -159,10 +167,11 @@ impl Tree {
     }
 }
 
+#[derive(Debug)]
 pub struct DirEntry {
     path: PathBuf,
     metadata: std::fs::Metadata,
-    depth: usize,
+    pub depth: usize,
     file_type: std::fs::FileType,
 }
 
@@ -189,6 +198,20 @@ impl DirEntry {
         }
     }
 
+    pub fn get_clean_name(&self) -> &str {
+        self.path().file_name().map_or_else(
+            || self.path().to_str().unwrap_or(""),
+            |n| match n.to_str().unwrap().strip_prefix(".") {
+                Some(name) => name,
+                None => n.to_str().unwrap(),
+            },
+        )
+    }
+
+    pub fn get_depth(&self) -> &usize {
+        &self.depth
+    }
+
     pub fn path(&self) -> &Path {
         &self.path
     }
@@ -205,53 +228,105 @@ impl DirEntry {
 pub struct TreeIterator {
     start: Option<PathBuf>,
     opts: UserFlags,
-    dirent_list: Vec<DirEntry>,
+    dirent_list: Vec<std::vec::IntoIter<DirEntry>>,
     depth: usize,
 }
 
 impl TreeIterator {
-    pub fn handle_entry(&mut self, dirent: DirEntry) -> Option<DirEntry> {
+    pub fn handle_entry(
+        &mut self,
+        dirent: DirEntry,
+    ) -> std::io::Result<Option<DirEntry>> {
         if dirent.is_dir() {
             let rd =
                 std::fs::read_dir(dirent.path()).expect("Error reading dir");
 
-            let mut entries = rd.filter_map(|dirent| {
-                if dirent.is_ok() {
-                    return Some(DirEntry::from_entry(
-                        dirent.unwrap(),
-                        self.depth + 1,
-                    ));
-                }
+            let mut entry_list: Vec<DirEntry> = rd
+                .filter_map(|dirent| {
+                    if dirent.is_ok() {
+                        return Some(DirEntry::from_entry(
+                            dirent.unwrap(),
+                            self.depth + 1,
+                        ));
+                    }
 
-                None
+                    None
+                })
+                .collect();
+
+            entry_list.sort_by(|a, b| match (a.is_dir(), b.is_dir()) {
+                (true, false) if self.opts.dirs_first => Ordering::Less,
+                (false, true) if self.opts.dirs_first => Ordering::Greater,
+                _ if self.opts.last_modified_sort => {
+                    todo!()
+                    // a.get_last_modified().cmp(&b.get_last_modified())
+                }
+                _ => {
+                    let a_name = a.get_clean_name();
+                    let b_name = b.get_clean_name();
+
+                    if self.opts.reverse_alpha_sort {
+                        b_name.cmp(a_name)
+                    } else {
+                        a_name.cmp(b_name)
+                    }
+                }
             });
 
-            entries.sort
+            self.dirent_list.push(entry_list.into_iter());
+        }
+
+        Ok(Some(dirent))
+    }
+}
+
+impl Iterator for TreeIterator {
+    type Item = (usize, DirEntry);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some(root) = self.start.take() {
+            if let Ok(Some(dent)) =
+                self.handle_entry(DirEntry::from_path(root, self.depth))
+            {
+                return Some((1, dent));
+            }
+        }
+
+        while !self.dirent_list.is_empty() {
+            self.depth = self.dirent_list.len();
+
+            let iter = self
+                .dirent_list
+                .last_mut()
+                .expect("BUG: dirent_list should not be empty");
+
+            let (remaining, _) = iter.size_hint();
+
+            match iter.next() {
+                Some(dent) => {
+                    if let Ok(Some(dent)) = self.handle_entry(dent) {
+                        self.depth = dent.depth;
+                        return Some((remaining, dent));
+                    }
+                }
+                None => {
+                    self.dirent_list.pop();
+                    self.depth = self.depth - 1;
+                }
+            };
         }
 
         None
     }
 }
 
-impl Iterator for TreeIterator {
-    type Item = DirEntry;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(root) = self.start.take() {
-            return Some(DirEntry::from_path(root, self.depth));
-        } else {
-            todo!()
-        }
-    }
-}
-
 impl IntoIterator for Tree {
     type IntoIter = TreeIterator;
-    type Item = DirEntry;
+    type Item = (usize, DirEntry);
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(mut self) -> Self::IntoIter {
         TreeIterator {
-            start: Some(self.root),
+            start: self.root.take(),
             opts: self.opts,
             dirent_list: vec![],
             depth: 0,

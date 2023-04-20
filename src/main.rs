@@ -1,10 +1,9 @@
 use crate::cli::flags::Cmd;
-use crate::entities::Tree;
+use crate::core::tree::Tree;
 use crate::output::{colors::ColorParser, pattern::PatternParser};
 
 pub mod cli;
 pub mod core;
-pub mod entities;
 pub mod output;
 
 extern crate once_cell;
@@ -42,23 +41,87 @@ const HELP: &str = r"
   -o                        -- output file path
 ";
 
+const VERTICAL_PIPE: &str = "\u{2502}";
+const L_RIGHT: &str = "\u{2514}";
+const T_RIGHT: &str = "\u{251C}";
+const _L_LEFT: &str = "\u{2510}";
+const _ARROW: &str = "\u{25B8}";
+
+const NAME_CONNECTOR: &str = "\u{2500}\u{2500}\u{2500}";
+
 fn main() -> std::io::Result<()> {
     Cmd::from_cli(std::env::args().skip(1).collect::<Vec<_>>());
 
     let flags = Cmd::global();
 
     if flags.help {
-        println!("{HELP}")
+        println!("{HELP}");
     } else if !flags.dir_path.as_ref().unwrap().is_dir() {
-        println!("Path is not a directory - {:?}", flags.dir_path)
+        println!("Path is not a directory - {:?}", flags.dir_path);
     } else {
-        let mut tree = Tree {
-            root: flags.dir_path.as_ref().unwrap().to_path_buf(),
-        };
+        let tree = Tree::new()
+            .with_opts(std::env::args().skip(1).collect::<Vec<_>>());
 
-        for entry in tree {
-            println!("----->{:?}", entry.unwrap().path)
+        let mut ret = String::new();
+        let mut left: std::collections::HashSet<usize> =
+            std::collections::HashSet::new();
+
+        for (remaining, entry) in tree {
+            let depth = entry.get_depth();
+
+            if *depth == 0 {
+                ret.push_str(
+                    entry.path().file_name().unwrap().to_str().unwrap(),
+                )
+            } else {
+                let mut branch = String::new();
+
+                for level in 1..=*depth {
+                    if level != *depth {
+                        if left.contains(&level) {
+                            branch.push_str(VERTICAL_PIPE);
+                            branch.push_str("    ");
+                        } else {
+                            branch.push_str("     ");
+                        }
+                    } else {
+                        let connector = if remaining > 1 {
+                            left.insert(*depth);
+                            T_RIGHT
+                        } else {
+                            left.remove(depth);
+                            L_RIGHT
+                        };
+
+                        let name = entry
+                            .path()
+                            .file_name()
+                            .unwrap()
+                            .to_str()
+                            .unwrap();
+
+                        let additional_info = format!(
+                            "[{}{}{}] {name}",
+                            "some", "other", "stuff"
+                        );
+
+                        for val in [
+                            connector,
+                            NAME_CONNECTOR,
+                            " ",
+                            additional_info.as_str(),
+                        ] {
+                            branch.push_str(val)
+                        }
+                    }
+                }
+                ret.push_str(branch.as_str());
+            }
+
+            ret.push_str("\n");
         }
+
+        println!("{ret}");
         // let with_meta = Cmd::requires_metadata();
 
         // ColorParser::from_ls_colors(flags.colors);
