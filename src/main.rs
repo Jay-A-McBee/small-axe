@@ -1,10 +1,10 @@
 use crate::cli::flags::Cmd;
-use crate::core::tree::Tree;
-use crate::output::{colors::ColorParser, pattern::PatternParser};
+use crate::core::{colors::Colors, pattern::Pattern, tree::Tree};
+use std::borrow::Borrow;
+use std::ops::Deref;
 
 pub mod cli;
 pub mod core;
-pub mod output;
 
 extern crate once_cell;
 
@@ -41,6 +41,28 @@ const HELP: &str = r"
   -o                        -- output file path
 ";
 
+const ANSI_COLOR_RESET: &str = "\x1B[0m";
+
+fn get_ansi_color_esc_seq(colors: &(String, String)) -> (String, &str) {
+    let all_parts = [colors.0.as_str(), ";", colors.1.as_str(), "m"];
+
+    let fg_bg = all_parts.iter().fold(String::new(), |mut acc, &val| {
+        match val {
+            "" => (),
+            ";" if colors.1.is_empty() => (),
+            "m" if acc.is_empty() => (),
+            _ => acc.push_str(val),
+        };
+        acc
+    });
+
+    if fg_bg.is_empty() {
+        (fg_bg, "")
+    } else {
+        (format!("\x1B[{fg_bg}"), ANSI_COLOR_RESET)
+    }
+}
+
 const VERTICAL_PIPE: &str = "\u{2502}";
 const L_RIGHT: &str = "\u{2514}";
 const T_RIGHT: &str = "\u{251C}";
@@ -59,12 +81,28 @@ fn main() -> std::io::Result<()> {
     } else if !flags.dir_path.as_ref().unwrap().is_dir() {
         println!("Path is not a directory - {:?}", flags.dir_path);
     } else {
+        Colors::from_ls_colors(flags.colors);
+
+        // let pattern = match (&flags.pattern_match, &flags.pattern_exclude) {
+        //     (Some(match_pattern), None) => {
+        //         Some(Pattern::parse(match_pattern.as_str(), true))
+        //     }
+
+        //     (None, Some(exclude_pattern)) => {
+        //         Some(Pattern::parse(exclude_pattern.as_str(), false))
+        //     }
+
+        //     _ => None,
+        // };
+
         let tree = Tree::new()
             .with_opts(std::env::args().skip(1).collect::<Vec<_>>());
 
         let mut ret = String::new();
         let mut left: std::collections::HashSet<usize> =
             std::collections::HashSet::new();
+
+        let mut file_count = 0;
 
         for (remaining, entry) in tree {
             let depth = entry.get_depth();
@@ -93,17 +131,23 @@ fn main() -> std::io::Result<()> {
                             L_RIGHT
                         };
 
-                        let name = entry
-                            .path()
-                            .file_name()
-                            .unwrap()
-                            .to_str()
-                            .unwrap();
+                        if !entry.is_dir() {
+                            file_count += 1;
+                        }
 
-                        let additional_info = format!(
-                            "[{}{}{}] {name}",
-                            "some", "other", "stuff"
+                        let name = match entry.get_name() {
+                            Some(n) => {
+                                n.to_str().unwrap_or("Failed to get name")
+                            }
+                            _ => "Failed to get name",
+                        };
+
+                        let (fg_bg, reset) = get_ansi_color_esc_seq(
+                            Colors::get_color_tuple("directory"),
                         );
+
+                        let additional_info =
+                            format!("{fg_bg}{}{reset}", name);
 
                         for val in [
                             connector,
@@ -122,22 +166,8 @@ fn main() -> std::io::Result<()> {
         }
 
         println!("{ret}");
+        println!("total files: {file_count}");
         // let with_meta = Cmd::requires_metadata();
-
-        // ColorParser::from_ls_colors(flags.colors);
-
-        // let pattern_parser = match (&flags.pattern_match, &flags.pattern_exclude) {
-        //     (Some(match_pattern), None) => {
-        //         Some(PatternParser::parse_pattern(match_pattern.as_str(), true))
-        //     }
-
-        //     (None, Some(exclude_pattern)) => Some(PatternParser::parse_pattern(
-        //         exclude_pattern.as_str(),
-        //         false,
-        //     )),
-
-        //     _ => None,
-        // };
 
         // if let Some(tree) = DirTree::new(
         //     flags.dir_path.as_ref().unwrap(),

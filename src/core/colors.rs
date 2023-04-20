@@ -9,12 +9,13 @@ enum ColorFormats {
 }
 
 static DEFAULT: (String, String) = (String::new(), String::new());
-static COLORS: OnceCell<Option<HashMap<&'static str, (String, String)>>> = OnceCell::new();
+static COLORS: OnceCell<Option<HashMap<&'static str, (String, String)>>> =
+    OnceCell::new();
 
 #[derive(Debug, Default)]
-pub struct ColorParser {}
+pub struct Colors {}
 
-impl ColorParser {
+impl Colors {
     pub fn from_ls_colors(with_colors: bool) {
         if with_colors {
             let color_fmt = Self::get_color_var();
@@ -92,7 +93,8 @@ impl ColorParser {
 
         let colors = match color_fmt {
             ColorFormats::LsColors(color_var) => {
-                let mapped_color_tuples = Self::map_chars_to_ansi_color_code(&color_var);
+                let mapped_color_tuples =
+                    Self::map_chars_to_ansi_color_code(&color_var);
                 Some(
                     ls_colors_indexed_values
                         .into_iter()
@@ -185,9 +187,10 @@ mod test {
 
     #[test]
     fn ls_colors() {
-        let mock_lscolors = ColorFormats::LsColors(String::from("cxfxcxdxbxegedabagacad"));
+        let mock_lscolors =
+            ColorFormats::LsColors(String::from("cxfxcxdxbxegedabagacad"));
 
-        let result = ColorParser::create_color_map(mock_lscolors);
+        let result = Colors::create_color_map(mock_lscolors);
 
         assert_eq!(
             result,
@@ -211,7 +214,7 @@ mod test {
     fn ls_colors_delimited() {
         let mock_ls_colors = ColorFormats::LsColorsDelimited(String::from("di=01;31:ln=01;32:so=01;32:pi=01;101:ex=01;35:bd=01;105:cd=40:su=01;35:sg=01;35:ow=01;35:tw=01;35;101"));
 
-        let result = ColorParser::create_color_map(mock_ls_colors);
+        let result = Colors::create_color_map(mock_ls_colors);
 
         assert_eq!(
             result,
@@ -233,7 +236,7 @@ mod test {
 
     #[test]
     fn ls_colors_undefined() {
-        let result = ColorParser::create_color_map(ColorFormats::Undefined);
+        let result = Colors::create_color_map(ColorFormats::Undefined);
 
         assert_eq!(result, None)
     }

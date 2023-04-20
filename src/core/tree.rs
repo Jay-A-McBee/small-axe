@@ -208,6 +208,16 @@ impl DirEntry {
         )
     }
 
+    pub fn is_hidden(&self) -> bool {
+        self.path().file_name().map_or(false, |n| {
+            n.to_str().map_or(false, |name| name.starts_with('.'))
+        })
+    }
+
+    pub fn get_name(&self) -> Option<&std::ffi::OsStr> {
+        self.path().file_name()
+    }
+
     pub fn get_depth(&self) -> &usize {
         &self.depth
     }
@@ -242,12 +252,20 @@ impl TreeIterator {
                 std::fs::read_dir(dirent.path()).expect("Error reading dir");
 
             let mut entry_list: Vec<DirEntry> = rd
-                .filter_map(|dirent| {
-                    if dirent.is_ok() {
-                        return Some(DirEntry::from_entry(
-                            dirent.unwrap(),
+                .filter_map(|entry| {
+                    if entry.is_ok() {
+                        let dir_entry = DirEntry::from_entry(
+                            entry.unwrap(),
                             self.depth + 1,
-                        ));
+                        );
+
+                        if (!self.opts.all && dir_entry.is_hidden())
+                            || (!dir_entry.is_dir() && self.opts.dirs)
+                        {
+                            return None;
+                        }
+
+                        return Some(dir_entry);
                     }
 
                     None
