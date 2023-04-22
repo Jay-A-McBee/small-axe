@@ -1,7 +1,6 @@
 use crate::cli::flags::Cmd;
 use crate::core::{colors::Colors, pattern::Pattern, tree::Tree};
-use std::borrow::Borrow;
-use std::ops::Deref;
+use std::borrow::Cow;
 
 pub mod cli;
 pub mod core;
@@ -43,8 +42,8 @@ const HELP: &str = r"
 
 const ANSI_COLOR_RESET: &str = "\x1B[0m";
 
-fn get_ansi_color_esc_seq(colors: &(String, String)) -> (String, &str) {
-    let all_parts = [colors.0.as_str(), ";", colors.1.as_str(), "m"];
+fn get_ansi_color_esc_seq(colors: &(String, String)) -> (String, &'static str) {
+    let all_parts = [&*colors.0, ";", &*colors.1, "m"];
 
     let fg_bg = all_parts.iter().fold(String::new(), |mut acc, &val| {
         match val {
@@ -95,32 +94,33 @@ fn main() -> std::io::Result<()> {
         //     _ => None,
         // };
 
-        let tree = Tree::new()
-            .with_opts(std::env::args().skip(1).collect::<Vec<_>>());
+        let tree =
+            Tree::new().with_opts(std::env::args().skip(1).collect::<Vec<_>>());
 
         let mut ret = String::new();
         let mut left: std::collections::HashSet<usize> =
             std::collections::HashSet::new();
 
         let mut file_count = 0;
+        let mut dir_count = 0;
 
         for (remaining, entry) in tree {
             let depth = entry.get_depth();
 
             if *depth == 0 {
-                ret.push_str(
-                    entry.path().file_name().unwrap().to_str().unwrap(),
-                )
+                let name = match entry.get_name() {
+                    Some(n) => n.to_str().unwrap_or("Failed to get name"),
+                    _ => "Failed to get name",
+                };
+                ret.push_str(name)
             } else {
-                let mut branch = String::new();
-
                 for level in 1..=*depth {
                     if level != *depth {
                         if left.contains(&level) {
-                            branch.push_str(VERTICAL_PIPE);
-                            branch.push_str("    ");
+                            ret.push_str(VERTICAL_PIPE);
+                            ret.push_str("    ");
                         } else {
-                            branch.push_str("     ");
+                            ret.push_str("     ");
                         }
                     } else {
                         let connector = if remaining > 1 {
@@ -133,6 +133,8 @@ fn main() -> std::io::Result<()> {
 
                         if !entry.is_dir() {
                             file_count += 1;
+                        } else if entry.is_dir() {
+                            dir_count += 1;
                         }
 
                         let name = match entry.get_name() {
@@ -142,31 +144,58 @@ fn main() -> std::io::Result<()> {
                             _ => "Failed to get name",
                         };
 
-                        let (fg_bg, reset) = get_ansi_color_esc_seq(
-                            Colors::get_color_tuple("directory"),
+                        let color_tup =
+                            match (entry.is_dir(), entry.is_symlink()) {
+                                (true, false) => {
+                                    Colors::get_color_tuple("directory")
+                                }
+                                (false, true) => {
+                                    Colors::get_color_tuple("sym_link")
+                                }
+                                _ => Colors::get_color_tuple(""),
+                            };
+
+                        let (fg_bg, reset) = get_ansi_color_esc_seq(color_tup);
+
+                        let additional_info = format!(
+                            "{}{fg_bg}{}{reset}",
+                            entry.get_additional_info(),
+                            name
                         );
 
-                        let additional_info =
-                            format!("{fg_bg}{}{reset}", name);
+                        let (arrow_chars, linked_path) = if entry.is_symlink() {
+                            (
+                                " -> ",
+                                std::fs::read_link(entry.path()).map_or(
+                                    "failed to get linked path",
+                                    |linked| {
+                                        linked.as_os_str().to_str().unwrap()
+                                    },
+                                ),
+                            )
+                        } else {
+                            ("", "")
+                        };
 
                         for val in [
                             connector,
                             NAME_CONNECTOR,
                             " ",
                             additional_info.as_str(),
+                            arrow_chars,
+                            linked_path,
                         ] {
-                            branch.push_str(val)
+                            ret.push_str(val)
                         }
                     }
                 }
-                ret.push_str(branch.as_str());
             }
 
             ret.push_str("\n");
         }
 
         println!("{ret}");
-        println!("total files: {file_count}");
+        println!("Total directories: {dir_count} Total files: {file_count}");
         // let with_meta = Cmd::requires_metadata();
 
         // if let Some(tree) = DirTree::new(

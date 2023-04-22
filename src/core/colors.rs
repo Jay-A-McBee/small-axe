@@ -39,23 +39,23 @@ impl Colors {
     fn map_chars_to_ansi_color_code(color_var: &str) -> Vec<(String, String)> {
         // Map of letter to tuple of ANSI color codes - (foreground, background)
         let mapped_ls_colors = HashMap::from([
-            ('a', (String::from("30"), String::from("40"))), // black
-            ('b', (String::from("31"), String::from("41"))), // red
-            ('c', (String::from("32"), String::from("42"))), // green
-            ('d', (String::from("33"), String::from("43"))), // yellow
-            ('e', (String::from("34"), String::from("44"))), // blue
-            ('f', (String::from("35"), String::from("45"))), // magenta
-            ('g', (String::from("36"), String::from("46"))), // cyan
-            ('h', (String::from("37"), String::from("47"))), // white
-            ('A', (String::from("90"), String::from("100"))), // bright black
-            ('B', (String::from("91"), String::from("101"))), // bright red
-            ('C', (String::from("92"), String::from("102)"))), // bright green
-            ('D', (String::from("93"), String::from("103"))), // bright yellow
-            ('E', (String::from("94"), String::from("104)"))), // bright blue
-            ('F', (String::from("95"), String::from("105"))), // bright magenta
-            ('G', (String::from("96"), String::from("106"))), // bright cyan
-            ('H', (String::from("97"), String::from("107"))), // bright white
-            ('x', (String::new(), String::new())),
+            ('a', ("30", "40")),   // black
+            ('b', ("31", "41")),   // red
+            ('c', ("32", "42")),   // green
+            ('d', ("33", "43")),   // yellow
+            ('e', ("34", "44")),   // blue
+            ('f', ("35", "45")),   // magenta
+            ('g', ("36", "46")),   // cyan
+            ('h', ("37", "47")),   // white
+            ('A', ("90", "100")),  // bright black
+            ('B', ("91", "101")),  // bright red
+            ('C', ("92", "102)")), // bright green
+            ('D', ("93", "103")),  // bright yellow
+            ('E', ("94", "104)")), // bright blue
+            ('F', ("95", "105")),  // bright magenta
+            ('G', ("96", "106")),  // bright cyan
+            ('H', ("97", "107")),  // bright white
+            ('x', ("", "")),
         ]);
 
         color_var
@@ -65,7 +65,7 @@ impl Colors {
             .map(|chunk| {
                 let (fg_color, _) = mapped_ls_colors.get(&chunk[0]).unwrap();
                 let (_, bg_color) = mapped_ls_colors.get(&chunk[1]).unwrap();
-                (fg_color.clone(), bg_color.clone())
+                (fg_color.to_string(), bg_color.to_string())
             })
             .collect()
     }
