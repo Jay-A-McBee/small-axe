@@ -1,24 +1,22 @@
 ```
 $ tree -f tests/mock_dir
-"mock_dir"
+[CWD]/tests/mock_dir
 ├─── [CWD]/tests/mock_dir/A
 │    ├─── [CWD]/tests/mock_dir/A/A_NESTED
-│    ├─── tests/mock_dir/A/a.rs
-│    ├─── tests/mock_dir/A/b.rs
-│    └─── tests/mock_dir/A/c.rs
-├─── tests/mock_dir/A.rs
+│    ├─── [CWD]/tests/mock_dir/A/a.rs
+│    ├─── [CWD]/tests/mock_dir/A/b.rs
+│    └─── [CWD]/tests/mock_dir/A/c.rs
+├─── [CWD]/tests/mock_dir/A.rs
 ├─── [CWD]/tests/mock_dir/B
-│    ├─── tests/mock_dir/B/a.rs
-│    ├─── tests/mock_dir/B/b.rs
-│    └─── tests/mock_dir/B/c.rs
+│    ├─── [CWD]/tests/mock_dir/B/a.rs
+│    ├─── [CWD]/tests/mock_dir/B/b.rs
+│    └─── [CWD]/tests/mock_dir/B/c.rs
 ├─── [CWD]/tests/mock_dir/C
-│    ├─── tests/mock_dir/C/a.rs
-│    ├─── tests/mock_dir/C/b.rs
-│    └─── tests/mock_dir/C/c.rs
-└─── sym_linked -> "tests/mock_dir/A/"
-
+│    ├─── [CWD]/tests/mock_dir/C/a.rs
+│    ├─── [CWD]/tests/mock_dir/C/b.rs
+│    └─── [CWD]/tests/mock_dir/C/c.rs
+└─── sym_linked -> tests/mock_dir/A/
 
 Total directories: 4 Total files: 10
-
 
 ```

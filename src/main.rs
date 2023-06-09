@@ -1,14 +1,17 @@
-use crate::cli::flags::Cmd;
-use crate::entities::dir::DirTree;
-use crate::output::{colors::ColorParser, pattern::PatternParser};
+use crate::cli::{Cmd, TreeIteratorFlags};
+use crate::core::colors::Colors;
+use crate::core::display::Display;
+use crate::core::pattern::Pattern;
+use crate::core::tree::Tree;
 
 pub mod cli;
-pub mod entities;
-pub mod output;
+pub mod core;
 
 extern crate once_cell;
 
 const HELP: &str = r"
+  usage: tree [-adfipshugqrtnoCFPIN] --[help version noreport inodes device dirsfirst prune filelimit] [path]
+
   --help                    -- list all flags
   --version                 -- prints version of tree
   --noreport                -- silence total directory and file count
@@ -41,53 +44,44 @@ const HELP: &str = r"
   -o                        -- output file path
 ";
 
-fn main() -> std::io::Result<()> {
-    Cmd::from_cli(std::env::args().skip(1).collect::<Vec<_>>());
+fn main() {
+    let mut cmd = Cmd::from(std::env::args());
 
-    let flags = Cmd::global();
-
-    if flags.help {
-        println!("{HELP}")
-    } else if !flags.dir_path.as_ref().unwrap().is_dir() {
-        println!("Path is not a directory - {:?}", flags.dir_path)
+    if cmd.flags.help {
+        println!("{HELP}");
+    } else if !cmd.flags.dir_path.as_ref().unwrap().is_dir() {
+        println!("Path is not a directory - {:?}", cmd.flags.dir_path);
     } else {
-        let with_meta = Cmd::requires_metadata();
+        Colors::from_ls_colors(cmd.flags.colors);
 
-        ColorParser::from_ls_colors(flags.colors);
+        let pattern =
+            match (&cmd.flags.pattern_match, &cmd.flags.pattern_exclude) {
+                (Some(match_pattern), None) => {
+                    Some(Pattern::parse(match_pattern.as_str(), true))
+                }
 
-        let pattern_parser = match (&flags.pattern_match, &flags.pattern_exclude) {
-            (Some(match_pattern), None) => {
-                Some(PatternParser::parse_pattern(match_pattern.as_str(), true))
-            }
+                (None, Some(exclude_pattern)) => {
+                    Some(Pattern::parse(exclude_pattern.as_str(), false))
+                }
 
-            (None, Some(exclude_pattern)) => Some(PatternParser::parse_pattern(
-                exclude_pattern.as_str(),
-                false,
-            )),
+                _ => None,
+            };
 
-            _ => None,
-        };
-
-        if let Some(tree) = DirTree::new(
-            flags.dir_path.as_ref().unwrap(),
-            0,
-            with_meta,
-            &pattern_parser,
-        ) {
-            println!("{}", tree);
-
-            if !flags.no_report {
-                let (total_dir_count, total_file_count) = tree.get_total_contents_count();
-                let report = format!(
-                    "\nTotal directories: {total_dir_count} Total files: {total_file_count}\n"
-                );
-
-                println!("{}", report)
-            }
-        } else {
-            println!("Uh-oh something went wrong creating the directory structure")
-        }
+        Display::print(
+            Tree::new(
+                &mut TreeIteratorFlags {
+                    root: cmd.flags.dir_path.take(),
+                    max_depth: cmd.flags.max_depth.take(),
+                    visit_all: cmd.flags.all,
+                    dirs_only: cmd.flags.dirs,
+                    dirs_first: cmd.flags.dirs_first,
+                    last_mod_sort: cmd.flags.last_modified_sort,
+                    rev_alpha_sort: cmd.flags.reverse_alpha_sort,
+                    follow_symlinks: cmd.flags.follow_symlinks,
+                },
+                pattern,
+            ),
+            &cmd,
+        );
     }
-
-    Ok(())
 }

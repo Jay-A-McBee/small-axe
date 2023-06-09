@@ -1,13 +1,11 @@
 ```
 $ tree -d tests/mock_dir
-"mock_dir"
+mock_dir
 ├─── A
 │    └─── A_NESTED
 ├─── B
 └─── C
 
-
 Total directories: 4 Total files: 0
-
 
 ```

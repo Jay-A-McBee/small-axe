@@ -1,13 +1,16 @@
 ```
 $ tree tests/mock_dir -I '[acAC]'
-"mock_dir"
+mock_dir
+├─── A
+│    ├─── A_NESTED
+│    └─── b.rs
 ├─── B
 │    └─── b.rs
-└─── sym_linked -> "tests/mock_dir/A/"
+├─── C
+│    └─── b.rs
+└─── sym_linked -> tests/mock_dir/A/
 
-
-Total directories: 1 Total files: 1
-
+Total directories: 4 Total files: 3
 
 ```
 

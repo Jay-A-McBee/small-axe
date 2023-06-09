@@ -9,13 +9,13 @@ pub enum PatternType {
     Literal(char),
 }
 
-pub struct PatternParser {
+pub struct Pattern {
     pattern: Vec<PatternType>,
     pub inclusive: bool,
 }
 
-impl PatternParser {
-    pub fn parse_pattern(pattern: &str, is_inclusive: bool) -> Self {
+impl Pattern {
+    pub fn parse(pattern: &str, is_inclusive: bool) -> Self {
         let mut mapped_pattern: Vec<PatternType> = vec![];
         let mut chars_iter = pattern.chars().peekable();
 
@@ -26,7 +26,7 @@ impl PatternParser {
             match ch {
                 '*' => mapped_pattern.push(PatternType::OneOrMore),
                 '?' => mapped_pattern.push(PatternType::One),
-                '[' => active_group = Some(vec![]),
+                '[' if !active_group.is_some() => active_group = Some(vec![]),
                 ']' => {
                     let char_set = active_group
                         .take()
@@ -45,13 +45,17 @@ impl PatternParser {
                 }
                 '-' if active_group.is_some() => {
                     let mut group = active_group.take().unwrap();
-                    let previous_char = group.pop().expect("Invalid wildcard pattern");
+                    let previous_char =
+                        group.pop().expect("Invalid wildcard pattern");
 
                     // This is a range in a bracketed group
                     if previous_char.is_ascii_alphanumeric() {
-                        let end_range_val = chars_iter.next().expect("Invalid wildcard pattern");
+                        let end_range_val = chars_iter
+                            .next()
+                            .expect("Invalid wildcard pattern");
 
-                        let mut all_vals = (previous_char as u32..=end_range_val as u32)
+                        let mut all_vals = (previous_char as u32
+                            ..=end_range_val as u32)
                             .filter_map(std::char::from_u32)
                             .collect::<Vec<char>>();
 
@@ -62,7 +66,9 @@ impl PatternParser {
                     }
                     active_group = Some(group);
                 }
-                '!' if chars_iter.peek().is_some() && *chars_iter.peek().unwrap() == '[' => {
+                '!' if chars_iter.peek().is_some()
+                    && *chars_iter.peek().unwrap() == '[' =>
+                {
                     is_exclusive = true
                 }
                 '|' if active_group.is_some() => (),
@@ -94,13 +100,6 @@ impl PatternParser {
     }
 
     pub fn is_match(&self, value: &str) -> bool {
-        let pattern_len = self.pattern.len();
-        let val_len = value.len();
-
-        if val_len < pattern_len {
-            return false;
-        }
-
         let mut pattern_iter = self.pattern.iter().peekable();
         let mut val_chars = value.chars();
 
@@ -155,19 +154,19 @@ mod pattern_parsing_tests {
 
     #[test]
     fn parses_asterisk_pattern_base() {
-        let result = PatternParser::parse_pattern("*", true);
+        let result = Pattern::parse("*", true);
         assert_eq!(result.pattern, vec![PatternType::OneOrMore])
     }
 
     #[test]
     fn parses_question_mark_pattern_base() {
-        let result = PatternParser::parse_pattern("?", true);
+        let result = Pattern::parse("?", true);
         assert_eq!(result.pattern, vec![PatternType::One])
     }
 
     #[test]
     fn parses_enumerated_bracket_set_base() {
-        let result = PatternParser::parse_pattern("[abcde]", true);
+        let result = Pattern::parse("[abcde]", true);
         assert_eq!(
             result.pattern,
             vec![PatternType::OneOf(HashSet::from(['a', 'b', 'c', 'd', 'e']))]
@@ -176,7 +175,7 @@ mod pattern_parsing_tests {
 
     #[test]
     fn parses_hyphenated_bracket_range_base() {
-        let result = PatternParser::parse_pattern("[a-c]", true);
+        let result = Pattern::parse("[a-c]", true);
         assert_eq!(
             result.pattern,
             vec![PatternType::OneOf(HashSet::from(['a', 'b', 'c']))]
@@ -185,7 +184,7 @@ mod pattern_parsing_tests {
 
     #[test]
     fn parses_multi_hyphenated_bracket_ranges() {
-        let result = PatternParser::parse_pattern("[a-cD-F0-5]", true);
+        let result = Pattern::parse("[a-cD-F0-5]", true);
         assert_eq!(
             result.pattern,
             vec![PatternType::OneOf(HashSet::from([
@@ -196,7 +195,7 @@ mod pattern_parsing_tests {
 
     #[test]
     fn parses_combined_patterns() {
-        let result = PatternParser::parse_pattern("ctx-[a-c]??_t*", true);
+        let result = Pattern::parse("ctx-[a-c]??_t*", true);
         assert_eq!(
             result.pattern,
             vec![
@@ -221,129 +220,129 @@ mod pattern_matching_tests {
 
     #[test]
     fn one_or_more() {
-        let parser = PatternParser::parse_pattern("*", true);
+        let pattern = Pattern::parse("*", true);
 
-        let is_match = parser.is_match("abc");
+        let is_match = pattern.is_match("abc");
         assert!(is_match == true);
     }
 
     #[test]
     fn one_or_more_miss() {
-        let parser = PatternParser::parse_pattern("abc*", true);
+        let pattern = Pattern::parse("abc*", true);
 
-        let is_match = parser.is_match("abc");
+        let is_match = pattern.is_match("abc");
         assert!(is_match == false);
     }
 
     #[test]
     fn one_or_more_surrounded_by_literals() {
-        let parser = PatternParser::parse_pattern("a*c", true);
+        let pattern = Pattern::parse("a*c", true);
 
-        let is_match = parser.is_match("a_b_l_j_k_c");
+        let is_match = pattern.is_match("a_b_l_j_k_c");
         assert!(is_match == true);
     }
 
     #[test]
     fn one_or_more_final_pattern() {
-        let parser = PatternParser::parse_pattern("a_b*", true);
+        let pattern = Pattern::parse("a_b*", true);
 
-        let is_match = parser.is_match("a_b_l_j_k_c");
+        let is_match = pattern.is_match("a_b_l_j_k_c");
         assert!(is_match == true);
     }
 
     #[test]
     fn inclusive_bracket_match_enumerated() {
-        let parser = PatternParser::parse_pattern("a[bljk_]c", true);
+        let pattern = Pattern::parse("a[bljk_]c", true);
 
-        let is_match = parser.is_match("a_c");
+        let is_match = pattern.is_match("a_c");
         assert!(is_match == true);
     }
 
     #[test]
     fn inclusive_bracket_match_enumerated_hypen_literal() {
-        let parser = PatternParser::parse_pattern("a[bljk_-]c", true);
+        let pattern = Pattern::parse("a[bljk_-]c", true);
 
-        let is_match = parser.is_match("a-c");
+        let is_match = pattern.is_match("a-c");
         assert!(is_match == true);
     }
 
     #[test]
     fn inclusive_bracket_match_range() {
-        let parser = PatternParser::parse_pattern("a[b-k]c", true);
+        let pattern = Pattern::parse("a[b-k]c", true);
 
-        let is_match = parser.is_match("ajc");
+        let is_match = pattern.is_match("ajc");
         assert!(is_match == true);
     }
 
     #[test]
     fn inclusive_bracket_match_multi_range() {
-        let parser = PatternParser::parse_pattern("a[b-k|0-9]c", true);
+        let pattern = Pattern::parse("a[b-k|0-9]c", true);
 
-        let is_match = parser.is_match("a7c");
+        let is_match = pattern.is_match("a7c");
         assert!(is_match == true);
     }
 
     #[test]
     fn inclusive_bracket_match_range_miss() {
-        let parser = PatternParser::parse_pattern("a[b-k]c", true);
+        let pattern = Pattern::parse("a[b-k]c", true);
 
-        let is_match = parser.is_match("alc");
+        let is_match = pattern.is_match("alc");
         assert!(is_match == false);
     }
 
     #[test]
     fn exclusive_bracket_match_enumerated_miss() {
-        let parser = PatternParser::parse_pattern("a![bljk_]c", true);
+        let pattern = Pattern::parse("a![bljk_]c", true);
 
-        let is_match = parser.is_match("a_c");
+        let is_match = pattern.is_match("a_c");
         assert!(is_match == false);
     }
 
     #[test]
     fn exclusive_bracket_match_range_miss() {
-        let parser = PatternParser::parse_pattern("a![b-k]c", true);
+        let pattern = Pattern::parse("a![b-k]c", true);
 
-        let is_match = parser.is_match("ajc");
+        let is_match = pattern.is_match("ajc");
         assert!(is_match == false);
     }
 
     #[test]
     fn exclusive_bracket_match_range() {
-        let parser = PatternParser::parse_pattern("a![b-k]c", true);
+        let pattern = Pattern::parse("a![b-k]c", true);
 
-        let is_match = parser.is_match("alc");
+        let is_match = pattern.is_match("alc");
         assert!(is_match == true);
     }
 
     #[test]
     fn combined_pattern_match() {
-        let parser = PatternParser::parse_pattern("ctx-[a-c]??_t*", true);
+        let pattern = Pattern::parse("ctx-[a-c]??_t*", true);
 
-        let is_match = parser.is_match("ctx-bcc_trest");
+        let is_match = pattern.is_match("ctx-bcc_trest");
         assert!(is_match == true);
     }
 
     #[test]
     fn combined_pattern_match_1() {
-        let parser = PatternParser::parse_pattern("ctx-*-[a-c]??_t*", true);
+        let pattern = Pattern::parse("ctx-*-[a-c]??_t*", true);
 
-        let is_match = parser.is_match("ctx-qrs-bcc_trest");
+        let is_match = pattern.is_match("ctx-qrs-bcc_trest");
         assert!(is_match == true);
     }
 
     #[test]
     fn combined_pattern_match_miss() {
-        let parser = PatternParser::parse_pattern("ctx-*-[a-c]??_t*", true);
+        let pattern = Pattern::parse("ctx-*-[a-c]??_t*", true);
 
-        let is_match = parser.is_match("ctx-qrsbcc_trest-");
+        let is_match = pattern.is_match("ctx-qrsbcc_trest-");
         assert!(is_match == false);
     }
 
     #[test]
     fn combined_pattern_miss() {
-        let parser = PatternParser::parse_pattern("ctx-[a-c]??_t*", true);
+        let pattern = Pattern::parse("ctx-[a-c]??_t*", true);
 
-        let is_match = parser.is_match("ctx-bcc_t");
+        let is_match = pattern.is_match("ctx-bcc_t");
         assert!(is_match == false);
     }
 }

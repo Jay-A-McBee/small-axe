@@ -102,9 +102,10 @@ impl Ledger {
             let converted = name.to_string_lossy().to_string();
             format!("{connectors} {fg_bg}{converted}{reset}\n")
         } else {
-            let converted = name
-                .to_str()
-                .map_or_else(|| name.to_string_lossy().to_string(), |n| n.to_owned());
+            let converted = name.to_str().map_or_else(
+                || name.to_string_lossy().to_string(),
+                std::borrow::ToOwned::to_owned,
+            );
 
             format!("{connectors} {fg_bg}{converted}{reset}\n")
         };

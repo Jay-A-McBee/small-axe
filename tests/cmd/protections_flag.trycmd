@@ -1,25 +1,23 @@
 ```
 $ tree tests/mock_dir -p
-"mock_dir"
-├───[drwxr-xr-x] A
-│    ├───[drwxr-xr-x] A_NESTED
-│    ├───[-rw-r--r--] a.rs
-│    ├───[-rw-r--r--] b.rs
-│    └───[-rw-r--r--] c.rs
-├───[-rw-r--r--] A.rs
-├───[drwxr-xr-x] B
-│    ├───[-rw-r--r--] a.rs
-│    ├───[-rw-r--r--] b.rs
-│    └───[-rw-r--r--] c.rs
-├───[drwxr-xr-x] C
-│    ├───[-rw-r--r--] a.rs
-│    ├───[-rw-r--r--] b.rs
-│    └───[-rw-r--r--] c.rs
-└───[] sym_linked -> "tests/mock_dir/A/"
-
+mock_dir
+├─── [drwxr-xr-x] A
+│    ├─── [drwxr-xr-x] A_NESTED
+│    ├─── [-rw-r--r--] a.rs
+│    ├─── [-rw-r--r--] b.rs
+│    └─── [-rw-r--r--] c.rs
+├─── [-rw-r--r--] A.rs
+├─── [drwxr-xr-x] B
+│    ├─── [-rw-r--r--] a.rs
+│    ├─── [-rw-r--r--] b.rs
+│    └─── [-rw-r--r--] c.rs
+├─── [drwxr-xr-x] C
+│    ├─── [-rw-r--r--] a.rs
+│    ├─── [-rw-r--r--] b.rs
+│    └─── [-rw-r--r--] c.rs
+└─── [lrwxr-xr-x] sym_linked -> tests/mock_dir/A/
 
 Total directories: 4 Total files: 10
-
 
 ```
 
