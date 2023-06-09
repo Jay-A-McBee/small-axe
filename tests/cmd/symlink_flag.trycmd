@@ -1,6 +1,6 @@
 ```
 $ tree -l tests/mock_dir
-"mock_dir"
+mock_dir
 ├─── A
 │    ├─── A_NESTED
 │    ├─── a.rs
@@ -15,10 +15,8 @@ $ tree -l tests/mock_dir
 │    ├─── a.rs
 │    ├─── b.rs
 │    └─── c.rs
-└─── sym_linked [Recursion detected] -> "[CWD]/tests/mock_dir/A"
+└─── sym_linked [Recursion detected] -> tests/mock_dir/A/
 
-
-Total directories: 6 Total files: 13
-
+Total directories: 4 Total files: 10
 
 ```

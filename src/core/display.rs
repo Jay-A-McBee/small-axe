@@ -44,7 +44,7 @@ impl Display {
             let (recursion_detected, arrow_chars, linked_path) =
                 match entry.linked_path() {
                     Some(path) if entry.is_recursive_link => (
-                        "[Recursion detected]",
+                        " [Recursion detected]",
                         " -> ",
                         path.as_os_str()
                             .to_str()

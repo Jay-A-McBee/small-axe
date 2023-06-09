@@ -64,22 +64,44 @@ impl TreeIterator {
         &mut self,
         mut dirent: DirEntry,
     ) -> std::io::Result<Option<DirEntry>> {
+        // Don't descend into symlinked dir if linked path
+        // is present in visited paths. (Recursion detected)
+        //
+        // This mirrors the behavior of linux tree cmd.
+
+        // if dirent.is_symlink() && self.follow_symlinks {
+        //     println!(
+        //         "{:?} {}",
+        //         self.visited_paths,
+        //         format!(
+        //             "{:?}/{:?}",
+        //             self.root.as_ref().unwrap(),
+        //             dirent.linked_path().unwrap()
+        //         )
+        //     );
+        // }
         if dirent.is_symlink()
             && self.follow_symlinks
             && self.visited_paths.contains(dirent.linked_path().unwrap())
         {
-            println!("is dir {}", dirent.is_dir());
             dirent.is_recursive_link = true;
             return Ok(Some(dirent));
         }
 
-        if dirent.is_dir() {
-            let rd = match (dirent.is_symlink(), self.follow_symlinks) {
-                (true, _) => todo!(),
-                (false, _) => {
-                    std::fs::read_dir(dirent.path()).expect("Error reading dir")
-                }
-            };
+        let (is_dir, dir_path) = if dirent.is_dir() {
+            (true, Some(dirent.path()))
+        } else if dirent.is_symlink()
+            && self.follow_symlinks
+            && dirent.linked_path().unwrap().is_dir()
+        {
+            (true, Some(dirent.linked_path().unwrap().as_path()))
+        } else {
+            (false, None)
+        };
+
+        if is_dir {
+            let rd = std::fs::read_dir(dir_path.unwrap())
+                .expect("Error reading dir");
 
             let mut entry_list: Vec<DirEntry> = rd
                 .filter_map(|entry| {
