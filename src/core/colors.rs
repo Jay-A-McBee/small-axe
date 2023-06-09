@@ -8,8 +8,10 @@ enum ColorFormats {
     Undefined,
 }
 
-static DEFAULT: (String, String) = (String::new(), String::new());
-static COLORS: OnceCell<Option<HashMap<&'static str, (String, String)>>> =
+const ANSI_COLOR_RESET: &str = "\x1B[0m";
+static DEFAULT_COLOR: (String, &'static str) = (String::new(), "");
+
+static COLORS: OnceCell<Option<HashMap<&'static str, (String, &'static str)>>> =
     OnceCell::new();
 
 #[derive(Debug, Default)]
@@ -36,7 +38,9 @@ impl Colors {
     }
 
     // returns (fg, bg) color code tuples - ex. ("31", "103")
-    fn map_chars_to_ansi_color_code(color_var: &str) -> Vec<(String, String)> {
+    fn map_chars_to_ansi_color_code(
+        color_var: &str,
+    ) -> Vec<(String, &'static str)> {
         // Map of letter to tuple of ANSI color codes - (foreground, background)
         let mapped_ls_colors = HashMap::from([
             ('a', ("30", "40")),   // black
@@ -65,14 +69,15 @@ impl Colors {
             .map(|chunk| {
                 let (fg_color, _) = mapped_ls_colors.get(&chunk[0]).unwrap();
                 let (_, bg_color) = mapped_ls_colors.get(&chunk[1]).unwrap();
-                (fg_color.to_string(), bg_color.to_string())
+
+                Colors::map_color_to_esc_seq(fg_color, bg_color)
             })
             .collect()
     }
 
     fn create_color_map(
         color_fmt: ColorFormats,
-    ) -> Option<HashMap<&'static str, (String, String)>> {
+    ) -> Option<HashMap<&'static str, (String, &'static str)>> {
         let ls_colors_indexed_values = [
             "directory",
             "sym_link",
@@ -121,38 +126,43 @@ impl Colors {
                                     let resource_colors = color_config
                                         .split(';')
                                         .filter(|cfg_val| {
-                                            let parsed = cfg_val
-                                                .parse::<u8>()
-                                                .expect("failed to parse value"); // we only care about ansi color codes
+                                            let parsed =
+                                                cfg_val.parse::<u8>().expect(
+                                                    "failed to parse value",
+                                                ); // we only care about ansi color codes
                                             (30..=47).contains(&parsed) // standard fg colors
                                                 || (90..=107).contains(&parsed) // standard bg colors
                                         })
                                         .collect::<Vec<&str>>();
 
                                     if resource_colors.len() == 1 {
+                                        let fg =
+                                            *resource_colors.first().unwrap();
                                         Some((
-                                            *resource_map
-                                                .get(resource)
-                                                .expect("Failed to get resource colors"),
-                                            (
-                                                (*resource_colors.first().unwrap()).to_string(),
-                                                String::new(),
+                                            *resource_map.get(resource).expect(
+                                                "Failed to get resource colors",
+                                            ),
+                                            Colors::map_color_to_esc_seq(
+                                                fg, "",
                                             ),
                                         ))
                                     } else {
+                                        let fg =
+                                            *resource_colors.first().expect(
+                                                "Failed to get first colors",
+                                            );
+
+                                        let bg =
+                                            *resource_colors.get(1).expect(
+                                                "Failed to get last colors",
+                                            );
+
                                         Some((
-                                            *resource_map
-                                                .get(resource)
-                                                .expect("Failed to get resource color"),
-                                            (
-                                                (*resource_colors
-                                                    .first()
-                                                    .expect("Failed to get first colors"))
-                                                .to_string(),
-                                                (*resource_colors
-                                                    .get(1)
-                                                    .expect("Failed to get last colors"))
-                                                .to_string(),
+                                            *resource_map.get(resource).expect(
+                                                "Failed to get resource color",
+                                            ),
+                                            Colors::map_color_to_esc_seq(
+                                                fg, bg,
                                             ),
                                         ))
                                     }
@@ -163,7 +173,7 @@ impl Colors {
                                 None
                             }
                         })
-                        .collect::<HashMap<&str, (String, String)>>(),
+                        .collect::<HashMap<&str, (String, &'static str)>>(),
                 )
             }
             ColorFormats::Undefined => None,
@@ -172,12 +182,32 @@ impl Colors {
         colors
     }
 
-    pub fn get_color_tuple(resource_type: &str) -> &(String, String) {
-        if let Some(Some(colors)) = COLORS.get() {
-            return colors.get(resource_type).unwrap_or(&DEFAULT);
-        }
+    pub fn map_color_to_esc_seq(fg: &str, bg: &str) -> (String, &'static str) {
+        let all_parts = [&*fg, ";", &*bg, "m"];
 
-        &DEFAULT
+        let fg_bg = all_parts.iter().fold(String::new(), |mut acc, &val| {
+            match val {
+                "" => (),
+                ";" if fg.is_empty() => (),
+                "m" if acc.is_empty() => (),
+                _ => acc.push_str(val),
+            };
+            acc
+        });
+
+        if fg_bg.is_empty() {
+            return (fg_bg, "");
+        } else {
+            return (format!("\x1B[{fg_bg}"), ANSI_COLOR_RESET);
+        }
+    }
+
+    pub fn get_color_esc_seq(entity: &str) -> &(String, &'static str) {
+        if let Some(Some(color_map)) = COLORS.get() {
+            color_map.get(entity).unwrap_or(&DEFAULT_COLOR)
+        } else {
+            &DEFAULT_COLOR
+        }
     }
 }
 
@@ -195,17 +225,35 @@ mod test {
         assert_eq!(
             result,
             Some(HashMap::from([
-                ("directory", (String::from("32"), String::from(""))),
-                ("sym_link", (String::from("35"), String::from(""))),
-                ("socket", (String::from("32"), String::from(""))),
-                ("pipe", (String::from("33"), String::from(""))),
-                ("executable", (String::from("31"), String::from(""))),
-                ("special_block", (String::from("34"), String::from("46"))),
-                ("special_char", (String::from("34"), String::from("43"))),
-                ("exe_set_uid", (String::from("30"), String::from("41"))),
-                ("exe_set_gid", (String::from("30"), String::from("46"))),
-                ("dwo_sticky", (String::from("30"), String::from("42"))),
-                ("dwo_non_sticky", (String::from("30"), String::from("43")))
+                ("directory", (String::from("\x1B[32;m"), ANSI_COLOR_RESET)),
+                ("sym_link", (String::from("\x1B[35;m"), ANSI_COLOR_RESET)),
+                ("socket", (String::from("\x1B[32;m"), ANSI_COLOR_RESET)),
+                ("pipe", (String::from("\x1B[33;m"), ANSI_COLOR_RESET)),
+                ("executable", (String::from("\x1B[31;m"), ANSI_COLOR_RESET)),
+                (
+                    "special_block",
+                    (String::from("\x1B[34;46m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "special_char",
+                    (String::from("\x1B[34;43m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "exe_set_uid",
+                    (String::from("\x1B[30;41m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "exe_set_gid",
+                    (String::from("\x1B[30;46m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "dwo_sticky",
+                    (String::from("\x1B[30;42m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "dwo_non_sticky",
+                    (String::from("\x1B[30;43m"), ANSI_COLOR_RESET)
+                )
             ]))
         )
     }
@@ -219,17 +267,29 @@ mod test {
         assert_eq!(
             result,
             Some(HashMap::from([
-                ("directory", (String::from("31"), String::from(""))),
-                ("sym_link", (String::from("32"), String::from(""))),
-                ("socket", (String::from("32"), String::from(""))),
-                ("pipe", (String::from("101"), String::from(""))),
-                ("executable", (String::from("35"), String::from(""))),
-                ("special_block", (String::from("105"), String::from(""))),
-                ("special_char", (String::from("40"), String::from(""))),
-                ("exe_set_uid", (String::from("35"), String::from(""))),
-                ("exe_set_gid", (String::from("35"), String::from(""))),
-                ("dwo_sticky", (String::from("35"), String::from("101"))),
-                ("dwo_non_sticky", (String::from("35"), String::from("")))
+                ("directory", (String::from("\x1B[31;m"), ANSI_COLOR_RESET)),
+                ("sym_link", (String::from("\x1B[32;m"), ANSI_COLOR_RESET)),
+                ("socket", (String::from("\x1B[32;m"), ANSI_COLOR_RESET)),
+                ("pipe", (String::from("\x1B[101;m"), ANSI_COLOR_RESET)),
+                ("executable", (String::from("\x1B[35;m"), ANSI_COLOR_RESET)),
+                (
+                    "special_block",
+                    (String::from("\x1B[105;m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "special_char",
+                    (String::from("\x1B[40;m"), ANSI_COLOR_RESET)
+                ),
+                ("exe_set_uid", (String::from("\x1B[35;m"), ANSI_COLOR_RESET)),
+                ("exe_set_gid", (String::from("\x1B[35;m"), ANSI_COLOR_RESET)),
+                (
+                    "dwo_sticky",
+                    (String::from("\x1B[35;101m"), ANSI_COLOR_RESET)
+                ),
+                (
+                    "dwo_non_sticky",
+                    (String::from("\x1B[35;m"), ANSI_COLOR_RESET)
+                )
             ]))
         )
     }

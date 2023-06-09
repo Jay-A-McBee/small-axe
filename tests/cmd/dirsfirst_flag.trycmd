@@ -1,6 +1,6 @@
 ```
 $ tree tests/mock_dir --dirsfirst
-"mock_dir"
+mock_dir
 ├─── A
 │    ├─── A_NESTED
 │    ├─── a.rs
@@ -15,10 +15,8 @@ $ tree tests/mock_dir --dirsfirst
 │    ├─── b.rs
 │    └─── c.rs
 ├─── A.rs
-└─── sym_linked -> "tests/mock_dir/A/"
-
+└─── sym_linked -> tests/mock_dir/A/
 
 Total directories: 4 Total files: 10
-
 
 ```

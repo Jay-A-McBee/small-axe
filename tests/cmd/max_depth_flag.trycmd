@@ -1,24 +1,13 @@
 ```
-$ tree tests/mock_dir -L 1
-"mock_dir"
+$ tree tests/mock_dir -L 0
+mock_dir
 ├─── A
-│    ├─── a.rs
-│    ├─── b.rs
-│    └─── c.rs
 ├─── A.rs
 ├─── B
-│    ├─── a.rs
-│    ├─── b.rs
-│    └─── c.rs
 ├─── C
-│    ├─── a.rs
-│    ├─── b.rs
-│    └─── c.rs
-└─── sym_linked -> "tests/mock_dir/A/"
+└─── sym_linked -> tests/mock_dir/A/
 
-
-Total directories: 3 Total files: 10
-
+Total directories: 3 Total files: 1
 
 ```
 

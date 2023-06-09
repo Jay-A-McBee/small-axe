@@ -1,24 +1,22 @@
 ```
 $ tree tests/mock_dir -s
-"mock_dir"
-├───[256 B] A
-│    ├───[64 B] A_NESTED
-│    ├───[0 B] a.rs
-│    ├───[0 B] b.rs
-│    └───[0 B] c.rs
-├───[0 B] A.rs
-├───[160 B] B
-│    ├───[0 B] a.rs
-│    ├───[0 B] b.rs
-│    └───[0 B] c.rs
-├───[160 B] C
-│    ├───[0 B] a.rs
-│    ├───[0 B] b.rs
-│    └───[0 B] c.rs
-└───[0 B] sym_linked -> "tests/mock_dir/A/"
-
+mock_dir
+├─── [192 B] A
+│    ├─── [64 B] A_NESTED
+│    ├─── [0 B] a.rs
+│    ├─── [0 B] b.rs
+│    └─── [0 B] c.rs
+├─── [0 B] A.rs
+├─── [160 B] B
+│    ├─── [0 B] a.rs
+│    ├─── [0 B] b.rs
+│    └─── [0 B] c.rs
+├─── [160 B] C
+│    ├─── [0 B] a.rs
+│    ├─── [0 B] b.rs
+│    └─── [0 B] c.rs
+└─── [17 B] sym_linked -> tests/mock_dir/A/
 
 Total directories: 4 Total files: 10
-
 
 ```

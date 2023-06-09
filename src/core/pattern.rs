@@ -26,7 +26,7 @@ impl Pattern {
             match ch {
                 '*' => mapped_pattern.push(PatternType::OneOrMore),
                 '?' => mapped_pattern.push(PatternType::One),
-                '[' => active_group = Some(vec![]),
+                '[' if !active_group.is_some() => active_group = Some(vec![]),
                 ']' => {
                     let char_set = active_group
                         .take()
@@ -100,13 +100,6 @@ impl Pattern {
     }
 
     pub fn is_match(&self, value: &str) -> bool {
-        let pattern_len = self.pattern.len();
-        let val_len = value.len();
-
-        if val_len < pattern_len {
-            return false;
-        }
-
         let mut pattern_iter = self.pattern.iter().peekable();
         let mut val_chars = value.chars();
 

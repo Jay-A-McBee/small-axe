@@ -1,6 +1,6 @@
 ```
 $ tree tests/mock_dir --noreport
-"mock_dir"
+mock_dir
 ├─── A
 │    ├─── A_NESTED
 │    ├─── a.rs
@@ -15,7 +15,7 @@ $ tree tests/mock_dir --noreport
 │    ├─── a.rs
 │    ├─── b.rs
 │    └─── c.rs
-└─── sym_linked -> "tests/mock_dir/A/"
+└─── sym_linked -> tests/mock_dir/A/
 
 
 ```
