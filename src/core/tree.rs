@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::vec;
 
+use crate::same_file::Handle;
+
 use crate::cli::TreeIteratorFlags;
 
 use super::dirent::DirEntry;
@@ -47,7 +49,7 @@ struct Visited {
 pub struct TreeIterator {
     start: Option<PathBuf>,
     dirent_list: Vec<std::vec::IntoIter<DirEntry>>,
-    visited_paths: HashSet<PathBuf>,
+    visited_paths: Vec<DirHandle>,
     visit_all: bool,
     dirs_only: bool,
     dirs_first: bool,
@@ -82,7 +84,7 @@ impl TreeIterator {
         // }
         if dirent.is_symlink()
             && self.follow_symlinks
-            && self.visited_paths.contains(dirent.linked_path().unwrap())
+            && self.is_recursive(dirent.linked_path().unwrap().as_path())
         {
             dirent.is_recursive_link = true;
             return Ok(Some(dirent));
@@ -110,8 +112,9 @@ impl TreeIterator {
                             DirEntry::from_entry(entry, self.depth + 1);
 
                         if dir_entry.is_dir() && self.follow_symlinks {
-                            self.visited_paths
-                                .insert(dir_entry.path().to_path_buf());
+                            self.visited_paths.push(DirHandle {
+                                path: dir_entry.path().to_path_buf(),
+                            });
                         }
 
                         let keep = match (
@@ -169,6 +172,18 @@ impl TreeIterator {
 
         Ok(Some(dirent))
     }
+
+    fn is_recursive(&self, path: &Path) -> bool {
+        Handle::from_path(path).map_or(false, |h| {
+            self.visited_paths
+                .iter()
+                .any(|visited| Handle::from_path(&visited.path).unwrap() == h)
+        })
+    }
+}
+
+struct DirHandle {
+    path: PathBuf,
 }
 
 impl Iterator for TreeIterator {
@@ -224,7 +239,7 @@ impl IntoIterator for Tree {
         TreeIterator {
             start: self.root.take(),
             dirent_list: vec![],
-            visited_paths: HashSet::new(),
+            visited_paths: vec![],
             visit_all: self.visit_all,
             dirs_only: self.dirs_only,
             max_depth: self.max_depth,

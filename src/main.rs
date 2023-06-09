@@ -8,6 +8,7 @@ pub mod cli;
 pub mod core;
 
 extern crate once_cell;
+extern crate same_file;
 
 const HELP: &str = r"
   usage: tree [-adfipshugqrtnoCFPIN] --[help version noreport inodes device dirsfirst prune filelimit] [path]
