@@ -412,6 +412,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "420acb44afdae038210c99e69aae24109f32f15500aa708e81d46c9f29d55fcf"
 
 [[package]]
+name = "small-axe"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+ "same-file",
+ "trycmd",
+]
+
+[[package]]
 name = "snapbox"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -483,15 +492,6 @@ dependencies = [
  "serde_spanned",
  "toml_datetime",
  "winnow",
-]
-
-[[package]]
-name = "tree"
-version = "0.1.0"
-dependencies = [
- "once_cell",
- "same-file",
- "trycmd",
 ]
 
 [[package]]
