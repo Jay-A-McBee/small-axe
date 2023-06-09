@@ -416,6 +416,7 @@ name = "small-axe"
 version = "0.1.0"
 dependencies = [
  "once_cell",
+ "same-file",
  "trycmd",
 ]
 
