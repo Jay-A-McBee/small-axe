@@ -204,7 +204,7 @@ impl Iterator for TreeIterator {
             let iter = self
                 .dirent_list
                 .last_mut()
-                .expect("BUG: dirent_list should not be empty");
+                .expect("Dirent_list should not be empty");
 
             let (remaining, _) = iter.size_hint();
 
