@@ -122,11 +122,11 @@ impl Display {
             }
         }
 
-        println!("{ret}");
+        println!("\n{ret}");
 
         if !cmds.flags.no_report {
             println!(
-                "Total directories: {dir_count} Total files: {file_count}"
+                "Total directories: {dir_count} Total files: {file_count}\n"
             );
         }
     }
