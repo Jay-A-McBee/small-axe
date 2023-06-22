@@ -1,6 +1,4 @@
-# small-axe
-
-## \*nix tree command in Rust
+# small-axe - \*nix tree command in Rust
 
 “If you are the big tree, we are the small axe.”
 
