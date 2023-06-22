@@ -1,4 +1,4 @@
-# small-axe
+# small-axe - [WIP] \*nix tree command in Rust
 
 “If you are the big tree, we are the small axe.”
 
@@ -6,8 +6,6 @@
 ```bash
 tree [-adfghilnoprstuCDFN] [-L level] [-P pattern] [-I pattern] [--inodes] [--device] [--noreport] [--dirsfirst] [--help] [directory ...]
 ```
-
-### [WIP] \*nix tree command in Rust
 
 - Additional flags are under active development
 
