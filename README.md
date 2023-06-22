@@ -10,6 +10,6 @@ tree [-adfghilnoprstuCDFN] [-L level] [-P pattern] [-I pattern] [--inodes] [--de
 
 - Additional flags are under active development
 
-![Tree output in terminal image](./static/tree.webp)
+<img alt="Tree output in terminal image" src="./static/tree.webp" width="200" />
 
 Borrowing iterator logic was heavily inspired by [Walkdir](https://docs.rs/walkdir/latest/walkdir/).
